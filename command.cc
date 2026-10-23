@@ -35,12 +35,47 @@ void parse(std::vector<Token> &tokens)
     SimpleCommand *currentSimpleCommand = new SimpleCommand();
 
     currentCommand.execute();
-    /*
-      Implement this function 
-      you must parse for all possible tokens scenario
-      right now command.execute only print the format , you will inject it in your logic.
+    for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
+    {
+        TokenType type = tokens[i].type;
+        if (type == TOKEN_COMMAND || type == TOKEN_ARGUMENT){
+            simple->insertArgument(strdup(tokens[i].value.c_str()));
+        }
+        else if (type == TOKEN_PIPE){
+            currentCommand.insertSimpleCommand(simple);
+            simple = new SimpleCommand();
+        }
+        else if (type == TOKEN_BACKGROUND){
+            currentCommand._background = 1;
+        }
+        else {
+            i++;
+            char *file = strdup(tokens[i].value.c_str());
+            if (type == TOKEN_REDIRECT){
+	    	currentCommand._outFile = file;
+		currentCommand._append = 0;
+		}
+            else if (type == TOKEN_APPEND){
+		currentCommand._outFile = file;
+		currentCommand._append = 1;
+		}
+            else if (type == TOKEN_INPUT){
+		currentCommand._inputFile = file;
+		}
+            else if (type == TOKEN_ERROR){
+		currentCommand._errFile = file;
+		}
+            else {
+                currentCommand._outFile = file;
+                currentCommand._errFile = strdup(file);
+                currentCommand._append = 1;
+                currentCommand._out_error = 1;
+            }
+        }
+    }
 
-    */
+    currentCommand.insertSimpleCommand(simple);
+    currentCommand.execute();
 }
 
 SimpleCommand::SimpleCommand()
@@ -74,7 +109,9 @@ Command::Command()
     _numberOfSimpleCommands = 0;
     _outFile = 0;
     _inputFile = 0;
+    _append = 0;
     _errFile = 0;
+    _out_error = 0;
     _background = 0;
 }
 
