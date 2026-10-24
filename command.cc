@@ -225,6 +225,26 @@ void Command::print()
 
 void Command::execute()
 {
+    if (_numberOfSimpleCommands == 1) {
+        char **args = _simpleCommands[0]->_arguments;
+
+        if (strcmp(args[0], "exit") == 0) {
+            printf("Good bye!!\n");
+            clear();
+            exit(0);
+        }
+        else if (strcmp(args[0], "cd") == 0) {
+            const char *target = args[1];
+            if (target == NULL)
+                target = getenv("HOME");
+
+            if (target == NULL || chdir(target) == -1)
+                perror("cd");
+
+            clear();
+            return;
+        }
+    }
     print();
     fflush(stdout);
     int default_in  = dup(0);
@@ -326,6 +346,10 @@ void Command::execute()
             close(default_in);
             close(default_out);
             close(default_err);
+	    if (i != _numberOfSimpleCommands - 1) {
+                close(fd_in);
+            }
+            signal(SIGINT, SIG_DFL);
             execvp(args[0], args);
             perror(args[0]);
             _exit(1);
@@ -366,6 +390,7 @@ SimpleCommand *Command::_currentSimpleCommand;
 
 int main()
 {
+    signal(SIGINT, SIG_IGN):
     Command::_currentCommand.prompt();
     return 0;
 }
