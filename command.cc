@@ -53,10 +53,10 @@ void parse(std::vector<Token> &tokens)
                 }
             }
             else if(type == TOKEN_ARGUMENT){
-                if (word.find('*') != string::npos || word.find('?') != string::npos) {
+                if (word.find('*') != std::string::npos || word.find('?') != std::string::npos) {
                     int result = glob(word.c_str(), 0, NULL, &g);
                     if(result == 0){
-                        for (int j = 0; j < g.gl_pathc; j++) {
+                        for (size_t j = 0; j < g.gl_pathc; j++) {
                             currentSimpleCommand->insertArgument(strdup(g.gl_pathv[j]));
                         }
                         globfree(&g);
