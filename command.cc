@@ -226,6 +226,109 @@ void Command::print()
 void Command::execute()
 {
     print();
+    fflush(stdout);
+    int default_in  = dup(0);
+    int default_out = dup(1);
+    int default_err = dup(2);
+    int fd_in;
+    int fd_out;
+    int fd_err;
+
+    if (_inputFile) {
+        fd_in = open(_inputFile, O_RDONLY);
+        if (fd_in == -1) {
+            perror(_inputFile);
+            close(default_in);
+            close(default_out);
+            close(default_err);
+            clear();
+            return;
+        }
+    }
+    else {
+        fd_in = dup(default_in);
+    }
+
+    if (_errFile && _out_error == 0) {
+        fd_err = open(_errFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (fd_err == -1) {
+            perror(_errFile);
+            close(fd_in);
+            close(default_in);
+            close(default_out);
+            close(default_err);
+            clear();
+            return;
+        }
+        dup2(fd_err, 2);
+        close(fd_err);
+    }
+
+    int pid = 0;
+    for (int i = 0; i < _numberOfSimpleCommands; i++)
+    {
+        char **args = _simpleCommands[i]->_arguments;
+
+        dup2(fd_in, 0);
+        close(fd_in);
+
+        if (i == _numberOfSimpleCommands - 1) {
+            if (_outFile) {
+                if (_append == 1)
+                    fd_out = open(_outFile, O_WRONLY | O_CREAT | O_APPEND, 0644);
+                else
+                    fd_out = open(_outFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+                if (fd_out == -1) {
+                    perror(_outFile);
+                    dup2(default_in, 0);
+                    dup2(default_out, 1);
+                    dup2(default_err, 2);
+                    close(default_in);
+                    close(default_out);
+                    close(default_err);
+                    clear();
+                    return;
+                }
+            }
+            else {
+                fd_out = dup(default_out);
+            }
+            if (_out_error == 1) {
+                dup2(fd_out, 2);
+            }
+        }
+        else {
+            // pipes: Part 2.3
+        }
+
+        dup2(fd_out, 1);
+        close(fd_out);
+
+        pid = fork();
+        if (pid == -1) {
+            perror("fork failed!");
+        }
+        else if (pid == 0) {
+            close(default_in);
+            close(default_out);
+            close(default_err);
+            execvp(args[0], args);
+            perror(args[0]);
+            _exit(1);
+        }
+    }
+
+    dup2(default_in, 0);
+    dup2(default_out, 1);
+    dup2(default_err, 2);
+    close(default_in);
+    close(default_out);
+    close(default_err);
+
+    if (!_background) {
+        waitpid(pid, NULL, 0);
+    }
     clear();
 }
 

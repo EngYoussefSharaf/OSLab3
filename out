@@ -1,0 +1,26 @@
+total 696
+drwxrwxr-x  3 os os   4096 Oct 24 16:28 .
+drwxr-x--- 18 os os   4096 Oct 24 13:11 ..
+drwxrwxr-x  7 os os   4096 Oct 24 14:26 .git
+-rw-rw-r--  1 os os    488 Oct 24 14:19 Makefile
+-rwxrwxr-x  1 os os   9470 Oct 24 16:28 command.cc
+-rw-rw-r--  1 os os    649 Oct 23 11:14 command.h
+-rw-rw-r--  1 os os 208936 Oct 24 16:28 command.o
+-rwxrwxr-x  1 os os 223120 Oct 24 16:28 myshell
+-rw-r--r--  1 os os      0 Oct 24 16:28 out
+-rw-rw-r--  1 os os   1954 Oct 23 11:14 tokenizer.cc
+-rw-rw-r--  1 os os    456 Oct 23 11:15 tokenizer.h
+-rw-rw-r--  1 os os 232912 Oct 24 14:20 tokenizer.o
+total 700
+drwxrwxr-x  3 os os   4096 Oct 24 16:28 .
+drwxr-x--- 18 os os   4096 Oct 24 13:11 ..
+drwxrwxr-x  7 os os   4096 Oct 24 14:26 .git
+-rw-rw-r--  1 os os    488 Oct 24 14:19 Makefile
+-rwxrwxr-x  1 os os   9470 Oct 24 16:28 command.cc
+-rw-rw-r--  1 os os    649 Oct 23 11:14 command.h
+-rw-rw-r--  1 os os 208936 Oct 24 16:28 command.o
+-rwxrwxr-x  1 os os 223120 Oct 24 16:28 myshell
+-rw-r--r--  1 os os    589 Oct 24 16:28 out
+-rw-rw-r--  1 os os   1954 Oct 23 11:14 tokenizer.cc
+-rw-rw-r--  1 os os    456 Oct 23 11:15 tokenizer.h
+-rw-rw-r--  1 os os 232912 Oct 24 14:20 tokenizer.o
