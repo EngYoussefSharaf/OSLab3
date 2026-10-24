@@ -387,9 +387,46 @@ void Command::prompt()
 
 Command Command::_currentCommand;
 SimpleCommand *Command::_currentSimpleCommand;
-
+int convert_to_text(pid_t pid, char pid_str[])
+{
+    char temp[20];
+    int i = 0;
+    int j = 0;
+    do {
+        temp[i++] = '0' + pid % 10;
+        pid /= 10;
+    } while (pid > 0);
+    while (i > 0) {
+        pid_str[j++] = temp[--i];
+    }
+    pid_str[j++] = '\n';
+    return j;
+}
+void childHandler(int sig)
+{
+    pid_t pid;
+    int status;
+    int fd;
+    char pid_str[20];
+    fd = open("child.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (fd == -1) {
+        return;
+    }
+    while (true) {
+        pid = waitpid(-1, &status, WNOHANG);
+        if (pid <= 0) {
+            break;
+        }
+        int length = convert_to_text(pid, pid_str);
+        if (write(fd, pid_str, length) == -1) {
+            break;
+        }
+    }
+    close(fd);
+}
 int main()
 {
+    signal(SIGCHLD, childHandler);
     signal(SIGINT, SIG_IGN);
     Command::_currentCommand.prompt();
     return 0;
