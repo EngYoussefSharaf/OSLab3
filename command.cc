@@ -390,7 +390,7 @@ SimpleCommand *Command::_currentSimpleCommand;
 
 int main()
 {
-    signal(SIGINT, SIG_IGN):
+    signal(SIGINT, SIG_IGN);
     Command::_currentCommand.prompt();
     return 0;
 }
