@@ -364,7 +364,8 @@ void Command::execute()
     close(default_err);
 
     if (!_background) {
-        waitpid(pid, NULL, 0);
+        siginfo_t info;
+        waitid(P_PID, pid, &info, WEXITED | WNOWAIT);
     }
     clear();
 }
@@ -404,25 +405,19 @@ int convert_to_text(pid_t pid, char pid_str[])
 }
 void childHandler(int sig)
 {
-    pid_t pid;
     int status;
-    int fd;
+    pid_t pid;
     char pid_str[20];
-    fd = open("child.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (fd == -1) {
-        return;
-    }
-    while (true) {
-        pid = waitpid(-1, &status, WNOHANG);
-        if (pid <= 0) {
-            break;
-        }
-        int length = convert_to_text(pid, pid_str);
-        if (write(fd, pid_str, length) == -1) {
-            break;
+    int fd = open("child.log", O_WRONLY | O_CREAT | O_APPEND, 0644);
+
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        if (fd != -1) {
+            int length = convert_to_text(pid, pid_str);
+            write(fd, pid_str, length);
         }
     }
-    close(fd);
+    if (fd != -1)
+        close(fd);
 }
 int main()
 {
