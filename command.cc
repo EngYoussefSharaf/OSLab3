@@ -27,7 +27,7 @@
 #include <sstream>
 #include "command.h"
 #include "tokenizer.h"
-
+#include <errno.h>
 
 void parse(std::vector<Token> &tokens)
 {
@@ -40,7 +40,7 @@ void parse(std::vector<Token> &tokens)
     for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
     {
         TokenType type = tokens[i].type;
-
+	glob_t g;
         if (type == TOKEN_COMMAND || type == TOKEN_ARGUMENT) {
             std::string word = tokens[i].value;
             if (!word.empty() && word[0] == '"') {
@@ -376,8 +376,15 @@ void Command::execute()
     close(default_err);
 
     if (!_background) {
-        siginfo_t info;
-        waitid(P_PID, pid, &info, WEXITED | WNOWAIT);
+    int status;
+    pid_t result;
+    do {
+        result = waitpid(pid, &status, 0);
+       } while (result == -1 && errno == EINTR);
+
+    if (result == -1 && errno != ECHILD) {
+        perror("waitpid");
+       }
     }
     clear();
 }
