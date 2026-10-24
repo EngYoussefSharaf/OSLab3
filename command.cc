@@ -298,9 +298,22 @@ void Command::execute()
                 dup2(fd_out, 2);
             }
         }
-        else {
-            // pipes: Part 2.3
-        }
+	else {
+		int fd_pipe[2];
+    		if (pipe(fd_pipe) == -1) {
+        		perror("pipe failed!");
+        		dup2(default_in, 0);
+        		dup2(default_out, 1);
+        		dup2(default_err, 2);
+        		close(default_in);
+        		close(default_out);
+       		 	close(default_err);
+        		clear();
+        		return;
+    		}
+		fd_out = fd_pipe[1];
+		fd_in  = fd_pipe[0];
+	}
 
         dup2(fd_out, 1);
         close(fd_out);
