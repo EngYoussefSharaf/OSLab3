@@ -31,51 +31,83 @@
 
 void parse(std::vector<Token> &tokens)
 {
+    if (tokens[0].type == TOKEN_EOF){
+        return;
+    }
     Command currentCommand;
     SimpleCommand *currentSimpleCommand = new SimpleCommand();
-
-    currentCommand.execute();
+    bool error = false;
     for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
     {
         TokenType type = tokens[i].type;
-        if (type == TOKEN_COMMAND || type == TOKEN_ARGUMENT){
-            simple->insertArgument(strdup(tokens[i].value.c_str()));
+
+        if (type == TOKEN_COMMAND || type == TOKEN_ARGUMENT) {
+            std::string word = tokens[i].value;
+            if (word[0] == '"') {
+                while (!(word.size() >= 2 && word.back() == '"') && tokens[i + 1].type != TOKEN_EOF) {
+                    i++;
+                    word += " " + tokens[i].value;
+                }
+                if (word.size() >= 2 && word.back() == '"') {
+                    word = word.substr(1, word.size() - 2);
+                }
+            }
+            currentSimpleCommand->insertArgument(strdup(word.c_str()));
         }
-        else if (type == TOKEN_PIPE){
-            currentCommand.insertSimpleCommand(simple);
-            simple = new SimpleCommand();
+        else if (type == TOKEN_PIPE) {
+            if (currentSimpleCommand->_numberOfArguments == 0) {
+                fprintf(stderr, "myshell: syntax error near '|'\n");
+                error = true;
+                break;
+            }
+            currentCommand.insertSimpleCommand(currentSimpleCommand);
+            currentSimpleCommand = new SimpleCommand();
         }
-        else if (type == TOKEN_BACKGROUND){
+        else if (type == TOKEN_BACKGROUND) {
             currentCommand._background = 1;
         }
         else {
+            TokenType next = tokens[i + 1].type;
+            if (next != TOKEN_COMMAND && next != TOKEN_ARGUMENT) {
+                fprintf(stderr, "myshell: syntax error: missing file name after redirection\n");
+                error = true;
+                break;
+            }
             i++;
             char *file = strdup(tokens[i].value.c_str());
-            if (type == TOKEN_REDIRECT){
-	    	currentCommand._outFile = file;
-		currentCommand._append = 0;
-		}
-            else if (type == TOKEN_APPEND){
-		currentCommand._outFile = file;
-		currentCommand._append = 1;
-		}
-            else if (type == TOKEN_INPUT){
-		currentCommand._inputFile = file;
-		}
-            else if (type == TOKEN_ERROR){
-		currentCommand._errFile = file;
-		}
+            if (type == TOKEN_REDIRECT) {
+                currentCommand._outFile = file;
+                currentCommand._append = 0;
+            }
+            else if (type == TOKEN_APPEND) {
+                currentCommand._outFile = file;
+                currentCommand._append = 1;
+            }
+            else if (type == TOKEN_INPUT) {
+                currentCommand._inputFile = file;
+            }
+            else if (type == TOKEN_ERROR) {
+                currentCommand._errFile = file;
+            }
             else {
                 currentCommand._outFile = file;
                 currentCommand._errFile = strdup(file);
                 currentCommand._append = 1;
                 currentCommand._out_error = 1;
             }
-        }
+          }
     }
-
-    currentCommand.insertSimpleCommand(simple);
-    currentCommand.execute();
+    if (!error && currentSimpleCommand->_numberOfArguments == 0) {
+        fprintf(stderr, "myshell: syntax error: missing command\n");
+        error = true;
+        }
+    currentCommand.insertSimpleCommand(currentSimpleCommand);
+    if (error){
+        currentCommand.clear();
+        }
+    else {
+        currentCommand.execute();
+        }
 }
 
 SimpleCommand::SimpleCommand()
@@ -104,15 +136,15 @@ Command::Command()
 {
     _numberOfAvailableSimpleCommands = 1;
     _simpleCommands = (SimpleCommand **)
-        malloc(_numberOfSimpleCommands * sizeof(SimpleCommand *));
+        malloc(_numberOfAvailableSimpleCommands * sizeof(SimpleCommand *));
 
     _numberOfSimpleCommands = 0;
     _outFile = 0;
     _inputFile = 0;
-    _append = 0;
     _errFile = 0;
-    _out_error = 0;
     _background = 0;
+    _append = 0;
+    _out_error = 0;
 }
 
 void Command::insertSimpleCommand(SimpleCommand *simpleCommand)
@@ -138,7 +170,7 @@ void Command::clear()
         }
 
         free(_simpleCommands[i]->_arguments);
-        free(_simpleCommands[i]);
+        delete(_simpleCommands[i]);
     }
 
     if (_outFile)
@@ -161,6 +193,8 @@ void Command::clear()
     _inputFile = 0;
     _errFile = 0;
     _background = 0;
+    _append = 0;
+    _out_error = 0;
 }
 
 void Command::print()
@@ -192,22 +226,20 @@ void Command::print()
 void Command::execute()
 {
     print();
-    /*
-        Write your code here
-    */
-
     clear();
-    prompt();
 }
 
 void Command::prompt()
 {
-    printf("myshell>");
-    fflush(stdout);
     std::string input;
     while (true)
     {
-        std::getline(std::cin, input); 
+        printf("myshell>");
+        fflush(stdout);
+        if (!std::getline(std::cin, input)) {
+            printf("\n");
+            break;
+        }
         std::vector<Token> tokens = tokenize(input);
         parse(tokens);
     }
