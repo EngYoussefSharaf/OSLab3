@@ -43,13 +43,25 @@ void parse(std::vector<Token> &tokens)
 
         if (type == TOKEN_COMMAND || type == TOKEN_ARGUMENT) {
             std::string word = tokens[i].value;
-            if (word[0] == '"') {
+            if (!word.empty() && word[0] == '"') {
                 while (!(word.size() >= 2 && word.back() == '"') && tokens[i + 1].type != TOKEN_EOF) {
                     i++;
                     word += " " + tokens[i].value;
                 }
                 if (word.size() >= 2 && word.back() == '"') {
                     word = word.substr(1, word.size() - 2);
+                }
+            }
+            else if(type == TOKEN_ARGUMENT){
+                if (word.find('*') != string::npos || word.find('?') != string::npos) {
+                    int result = glob(word.c_str(), 0, NULL, &g);
+                    if(result == 0){
+                        for (int j = 0; j < g.gl_pathc; j++) {
+                            currentSimpleCommand->insertArgument(strdup(g.gl_pathv[j]));
+                        }
+                        globfree(&g);
+                        continue;
+                    }
                 }
             }
             currentSimpleCommand->insertArgument(strdup(word.c_str()));
